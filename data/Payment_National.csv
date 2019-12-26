@@ -1,0 +1,17 @@
+﻿Measure name,Type,Count,
+Payment for heart attack patients,Number less than national payment,194,23745
+Payment for heart failure patients,Number less than national payment,420,16632
+Payment for pneumonia patients,Number less than national payment,895,17415
+Payment for hip/knee replacement patients,Number less than national payment,1037,21953
+Payment for heart attack patients,Number same as national payment,1907,
+Payment for heart failure patients,Number same as national payment,2594,
+Payment for pneumonia patients,Number same as national payment,2423,
+Payment for hip/knee replacement patients,Number same as national payment,1058,
+Payment for heart attack patients,Number greater than national payment,200,
+Payment for heart failure patients,Number greater than national payment,547,
+Payment for pneumonia patients,Number greater than national payment,828,
+Payment for hip/knee replacement patients,Number greater than national payment,681,
+Payment for heart attack patients,Number of hospitals too few,1883,
+Payment for heart failure patients,Number of hospitals too few,1005,
+Payment for pneumonia patients,Number of hospitals too few,480,
+Payment for hip/knee replacement patients,Number of hospitals too few,681,
