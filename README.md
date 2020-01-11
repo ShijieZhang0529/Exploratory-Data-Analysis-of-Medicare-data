@@ -6,7 +6,7 @@
 
 + **Dataset**: The data we use is sourced from the [Medicare.gov](https://data.medicare.gov/), which is the official website for the U.S. government’s Medicare program and is managed by the Centers for Medicare & Medicaid Services (CMS), the federal agency that administers the Medicare program.
 
-## Example of Visualizations
++ **Example of Visualizations**
 
 ![p1](fig/fig1.png)
 ![p2](fig/fig2.png)
