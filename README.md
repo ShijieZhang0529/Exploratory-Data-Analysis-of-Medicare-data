@@ -8,9 +8,9 @@
 
 ## Example of Visualizations
 
-![p1](figs/fig1.png)
-![p2](figs/fig2.png)
-![p3](figs/fig3.png)
+![p1](fig/fig1.png)
+![p2](fig/fig2.png)
+![p3](fig/fig3.png)
 
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
