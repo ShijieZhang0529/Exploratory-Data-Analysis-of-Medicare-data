@@ -1,0 +1,542 @@
+---
+title: "Exploratory Data Analysis of Medicare data"
+author: Shijie Zhang, Qingyi Zheng
+date: "4/30/2019"
+output: html_document
+---
+
+
+# I. Introduction
+
+In this report, we present our exploratory data analysis, interactive plots, animations and many other interesting insights into the Medicare data. We focus on analyzing the Medicare data of different states in U.S., for the reason that we wish to explore the factors that influence the hospital rating and display the medical imbalance in different states. 
+
+## Background
+
+Health and health care disparities in the United States are a longstanding and persistent issue. Disparities have been documented for many decades and  despite overall improvements in population health over time, many disparities have persisted and, in some cases, widened. If a health outcome is seen to a greater or lesser extent between populations, there is disparity. Race or ethnicity, sex, sexual identity, age, disability, socioeconomic status, and geographic location all contribute to an individual's ability to achieve good health. It is important to recognize the impact that social determinants have on health outcomes of specific populations.
+
+We can define a health disparity as a particular type of health difference that is closely linked with social, economic, or environmental disadvantage. Health disparities adversely affect groups of people who have systematically experienced greater obstacles to health based on their racial or ethnic group; religion; socioeconomic status; gender; age; mental health; cognitive, sensory, or physical disability; sexual orientation or gender identity; geographic location; or other characteristics historically linked to discrimination or exclusion. So it is meaningful to investigate the health disparities between different states.
+
+##Topic
+
+Since ancient times, people have faced the problem of being old and sick. Hospitals often play a very important role in this matter. There are many differences in the hospital. For example, some hospitals are good at surgery but have a higher charge, and some hospitals are good at internal medicine with a low charge. Therefore, investigating the relationship between the rating of hospital and other factors becomes a key issue. Inspired by this problem, we analyze the rating of hospital by state, and try to find out the factors which contributes to the difference of the rating. To be more specific, we analyze the top 5 rating state and the last 5 rating state to show more details. At the same time, we think that cost of medical is also one of the important factors for patients to choose a hospital, so we also analyzed the payment of medical, in different states, to find whether there is some correlation between rating and payment. In addition, we include star distribution, deathrate and outpatient imaging efficiency as our research objects to investigate the relationship between these factors and hospital rating.
+
+
+##Following are a few questions that we aim to answer through our analysis:
+
+* How do average rating of hospital vary by states?
+* How do cost of medical vary by states and are they related to hospital rating?
+* How does death rate influence hospital rating?
+* What's the relationship between hospital star distribution and rating?
+* Does outpatient imaging efficiency play a role in rating?
+* Do hospitals in a certain region share some patterns?
+
+# II. Description of the Data Source
+
+The data we use is sourced from the **Medicare.gov**(`https://data.medicare.gov/`), 
+which is the official website for the U.S. government's Medicare program and is managed by the Centers for Medicare & Medicaid Services (CMS), the federal agency that administers the Medicare program. This site provides direct access to the official data from the CMS and gives official benefit information regarding Medicare. 
+
+There are actually some datasets for us to choose from on the website, such as Hosptial Compare Datasets, Physicain Compare Datasets, Home Health Compare Datasets, Hospice Compare Datasets and so on. But based on our interests, we finally choose the 
+Hosptial Compare Datasets, which allows us to find and compare information about the quality of care at over 4,000 Medicare-certified hosptials across United States. 
+
+The dataset we work with consists of several tables:
+
+* ```general_info```: A list of all hospitals that have been registered with Medicare, showing 29 attributes of each hosital. Some of the attributes used in our analysis are ```Hospital Name```(categorical), ```Address```(categorical), ```Phone Numbers```(categorical), ```State```(categorical), ```Hospital Overall Rating```(continous), ```Hospital Type```(categorical), ```Latitude```(continous), ```longitude```(continous).
+
+* ```payments```: Detailed data includes provider data for the payment measures and value of care displays. Key attributes we use are ```Payment```(continous), ```Payment category```(categorical), ```State```(categorical).
+
+* ```complications_and_deaths```: Provides information for the hip/knee complication measure, the CMS Patient Safety Indicators, and death rates. Useful varibales for this study are ```Score```(continous), ```Compared to National```(categorical), ```State```(categorical).
+
+* ```stars```: A dataset gives star ratings for hospitals across the country. Eight attributes in total.  ```State```(categorical),	```5 stars```(categorical),	```4 stars```(categorical), ```3 stars```(categorical),	```2 stars```(categorical),	```1 star```(categorical),	```Combined score```(continous),	```Number of hospitals rated```(categorical).
+
+* ```effectively_care```: Provides data for measures of cataract surgery outcome, colonoscopy follow-up, heart attack care, emergency department care, preventive care, blood clot prevention, pregnancy and delivery care, and cancer care. Attributes are ```State```(categorical), ```Condition```(categorical), ```Measure Name```(categorical), ```Measure ID```(categorical), ```Score```(continous).
+
+
+After a fast glance of the data, we find:
+
+* 4772 hospitals were registered with Medicare in total.
+
+* The dataset include some locations like Guam, which is an island in Micronesia in the Pacific Ocean. It is a territory that we are not concerned about in our study. 
+
+* Most of the attributes we are intersted in are in the text form, which can not be used directly by us. For example, the payments are recorded in formates like $5,000.00.
+
+
+
+
+# III. Description of Data Import / Cleaning / Transformation
+
+There were no major mismatches or inconsistencies in the datast. However, as we said before, most of the variables we were interested in do not contain data in the proper format that we can use directly. So we have to do some transformations and cleaning on our dataset in order to create the desired visualizations.
+
+
+1.  ``` Payment ```: The ```Payment``` varible in the dataset ```payments``` is in factor form and in the format that has the currency symbol '$' and comma separator ',' attached to it. So this varibale is manipulated by us to contain integer values for analysis. We first transfrom them into the character form and then use functions like substring and str_remove in the stringr package to remove the currency symbol and comma separator. Finally, we transform this variable into the numeric form.
+
+2.  ```Score```: All the ```Score``` attributes in our datasets are in the form of factor. Since e extensively used this feature in our analysis, we have to transform all of them into the form of numeric.
+
+3. The ```star``` dataset only contains the number of hospitals on each star rating levels and the total number of hosptials measured every state. Since the number of hospitals measured is not the same for every state, so we can not work with the number of hospitals on each star rating levels directly. In this case, we calculate the proportion of hospitals on each star rating level for every state. 
+
+4. The datasets contain some territories such as Puerto Ricans, Guam, Virgin Islands and so on. They are controlled by the U.S. government but are separate from the mainland or are not one of the U.S. States. These territories will distract us from our main foucus and some of them will affect the visulizations because of their locations. So we have to clean them out before the analysis.
+
+5. ```State```: This variable is transformed multiple times to meet the requirments of some R functions in order to make the visulization.
+
+
+#IV. Analysis of Missing Values
+
+The data has NA values. To better analyse the data, we dropped the rows and columns containing NA values while conducting exploratory analysis that made use of these features.
+
+A ```visna``` plot is constructed by us to analyze the missing values and missing patterns for the variables that we would use in our exploratory analysis. Here is an example for the ```payment``` dataset.
+
+
+```{r, echo=FALSE, fig.height=6,fig.width=9}
+library(extracat)
+missingdata<-read.csv("Payment.csv")
+missingdata<-missingdata[,c(5,11,12,13,14,15,23)]
+missingdata[missingdata=="Not Available"]<-NA
+visna(missingdata,sort="c", mar.col = c("#e06f69","#357b8a"))
+```
+
+
+Few observations from the plot:
+
+* The majority of the rows have no missing values. 
+
+* ```Payment``` , ```Denominat```, ```Lower.estir```, ```higher.estr``` are missing from almost 30% of the rows, and hence the observations corresponding to these missing values are not reflected in the later analysis.
+
+* ```Payment.ct``` is missing in few rows.
+
+Although some data are missing because many hospital didn't provide the information we need, we can still conclude from the above plot that the data contains only a few NA values. The analysis done on this data is performed without much loss of information. 
+
+
+# V. Main Results
+## Geographical Interactive Graph
+
+This is an interactive graph with all the hospitals in U.S. appearing in a clustered fashion. You can click on clusters to see the locations of all the hospitals registered at The Centers for Medicare and Medicaid Services (CMS). It gives you a zoom-in view. You can further click on each hospital to see details like Hospital Name, Hospital Address, Hospital Phone Number and Hospital Type. This interactive visualization gives us an overall sense of how the hospitals are distributed across the Nation. At the same time, it helps to explore every hospital geographically.
+
+```{r,warning=FALSE,echo=FALSE,message=FALSE, fig.height=6,fig.width=9}
+load("hos.RData")
+hos <- hos[hos$State!="GU" & hos$State!="AS" & hos$State!="VI" & hos$State!="PR", ]
+library(leaflet)
+label <- paste0("<b> Name: </b>", hos$Hospital.Name , "<br/><b> Address: </b>", hos$Address,
+               "<br> <b> Phone Number: </b>", hos$Phone.Number, "<br/><b> Hospital Type: </b>", hos$Hospital.Type)
+position.map <- leaflet(hos) %>%
+                addTiles() %>%
+                addMarkers(~lon, ~lat, 
+                           labelOptions = labelOptions(noHide = F),
+                           clusterOptions = markerClusterOptions(),
+                           popup = label) 
+position.map    
+
+```
+
+The hospital choice of the patients is determined by the patient's preference to mortality, safety of care, readmission rate, patient experience, effectiveness of care, timeliness of care, efficient use of medical imaging, and their type of disease. So it is meaningful to work with the overall hospital rating data, which is a good indicator of how well each hospital performed. Furthermore, it would be interesting to visualize the average hospital rating for each state, which shows us the difference between the performance of hosptials in different states.
+
+
+## What is the Overall Hospital Rating?
+
+The overall hospital rating summarizes a variety of measures, reflecting common conditions that hospitals treat, such as heart attacks or pneumonia. Hospitals may perform more complex services or procedures that is not reflected in the measures. The overall hospital rating shows how well each hospital performs, on average, compared to other hospitals in the U.S..
+
+The overall hospital rating ranges from 1 to 5. The higher rating, the better a hospital performs on the available quality measures. The most common overall hospital rating is 3.
+
+
+
+
+## Which State have Better Average Ratings?
+
+```{r,warning=FALSE,echo=FALSE,message=FALSE, fig.height=6, fig.width=9}
+library(tidyverse)
+library(choroplethr)
+library(choroplethrMaps)
+library(plyr)
+library(ggplot2)
+
+
+general<-read.csv("Hospital_General_Information.csv")
+rating<-general[general[,"Hospital.overall.rating"]!="Not Available",c(5,13)]
+rating$Hospital.overall.rating<-as.numeric(rating$Hospital.overall.rating)
+rating1<-tapply(rating$Hospital.overall.rating,rating$State,mean)
+rating<-data.frame(state=names(rating1),average_score=rating1)
+
+rating.map <- rating[!is.na(rating$average_score), ]
+rating.map <- rating.map[rating.map$state!="PR" & rating.map$state!="VI", ]
+data(state.regions)
+rating.map$statename <- state.regions$region
+colnames(rating.map) <- c("state", "value", "region")
+state_choropleth(rating.map,
+                 title = "Map showing Average Overall Hospital Rating by State",
+                 legend = "Overall Hospital Rating")+
+                 theme(plot.title = element_text(face = "bold", size=16))
+
+```
+
+
+This map shows the average overall hospital rating of each state. It is interesting to find that states like South Dakota, Minnesota and Wisconsin have relatively high ratings and they are close to each other. It is also observable that their surrounding states also have good ratings. But for Utah and Idaho, although they have high ratings, the ratings of states like Nevada and New Mexico are extremely low. It is safe to say that the highly rated states are mainly in the central north while the ratings of the states in the south are relatively low. It is also suprising to find that New York State is a clear outlier among the northeast states, where the overall hospital rating is lower than its surrounding regions.
+
+Since price is definiely one of the most important factors for patients to choose a hospital, so we also analyzed the estimated cost of medical, without insurance, in different states.
+
+
+```{r,echo=FALSE,message=FALSE,fig.height=6, fig.width=9}
+library(stringr)
+payment <- read.csv("Payment.csv")
+payment1 <- payment[payment$Payment!="Not Available", c("State", "Payment")]
+payment1$Payment <- str_remove(substring(as.character(payment1$Payment), 2), ",")
+payment1$Payment <- as.numeric(payment1$Payment)
+payment2 <- tapply(payment1$Payment, payment1$State, mean)
+payment.map <- data.frame(state=names(payment2), payments=payment2)
+payment.map <- payment.map[!is.na(payment.map$payments), ]
+payment.map <- payment.map[payment.map$state!="PR" & payment.map$state!="VI" & payment.map$state!="GU" & payment.map$state!="MP", ]
+data(state.regions)
+payment.map$statname <- state.regions$region
+colnames(payment.map) <- c("state", "value", "region")
+map <- state_choropleth(payment.map,
+                 title = "Map showing Cost of Medical by State",
+                 legend = "Payment") +
+                 #scale_color_gradient(low="#d3cbcb", high="#852eaa")+
+                 scale_fill_brewer("Cost Measures", palette=3)+
+                 theme(plot.title = element_text(face = "bold", size=16))
+
+map
+```
+
+
+This graph follows our previous ovarall hospital ratings by state map. Now it is obvious that the highly rated states would also tend to be less costly. When it comes to low cost of medical, states like South Dakota, Minnesota and Wisconsin are again the clear winner. It would be interesting to point out two patterns. (i). High rating and high medical cost states: Ohio State is one such region which have a high hospital rating while the cost of medical also tend to be fairly high. (ii). Low rating and low medical cost states: New Mexico has disappointed low hosptial ratings, but its medical cost is extremely low at the same time. Now we can also conclude that the high medical cost in New York State is probably one factor that makes it an outlier among the highly rated northeast states. 
+
+
+
+## Relationship between Hosital Rating and Cost of Medical(Payment)
+
+
+### An Overall Perspective of National Payment
+
+To better investigate the relation between payment and hospital rating, it is good to have an overall perspective of the national payment.
+
+We choose some typical examples to show the payment among all the diseases.
+This data includes national-level data for the payment measures associated with an episode of care for heart attack, heart failure, pneumonia, and hip/knee replacement patients.
+
+```{r,warning=FALSE,echo=FALSE}
+national<-read.csv("Payment_National.csv")
+colnames(national)<-c("Measure Name","Type","Number of hospitals","National Payment")
+```
+
+
+```{r,warning=FALSE,echo=FALSE,fig.width=9,fig.height=6}
+
+p <- ggplot(national,aes(x=`Measure Name`, y=`Number of hospitals`, fill=Type))+
+     geom_col(position = "dodge", colour="black")+  
+     scale_x_discrete(
+  breaks = c("Payment for heart attack patients","Payment for heart failure patients","Payment for pneumonia patients","Payment for hip/knee replacement patients"),
+  label = c("Payment for\n heart attack\n patients","Payment for\n heart failure\n patients","Payment for\n pneumonia\n patients","Payment for\n hip/knee \n replacement patients")
+)+
+  xlab("Payment Name")+
+  ylab("Number of Hospitals")+
+  ggtitle("National Hospital Payment Overview")+
+  labs(fill="Payment")+
+  theme(plot.title = element_text(face = "bold", size=16))
+
+p
+```
+
+
+
+### Payment comparision between Top 5 Rating States and Last 5 Rating States.
+
+To study the information behind the rating order, we compare payment between the top 5 rating states and the last 5 rating states to see if the payment influences the rating in some sense. It can also help patient to choose a better hospital in their budget and avoid some states which has relatively high payment and low rating.
+
+#### Top 5 Rating State Payment
+```{r,warning=FALSE,echo=FALSE,fig.width=9,fig.height=6}
+pay<-read.csv("Payment.csv")
+topstate<-c("WI","SD","UT","HI","ID")
+lowstate<-c("DC","NY","NV","FL","MS")
+payment<-pay[pay$State==topstate,c("State","Payment")]
+payment<-payment[payment$Payment!="Not Available",]
+payment$Payment<-substr(payment$Payment,start=2,stop=10)
+payment$Payment<-as.numeric(gsub(",","", payment$Payment))
+payment$State<-as.character(payment$State)
+ggplot(payment, aes(x = fct_reorder(State, -Payment, fun=median),
+                    y = Payment)) + 
+  geom_boxplot(fill = "#FF5A5F", color = "#565A5C") + 
+  geom_jitter(alpha = 0.05, width = 0.1, color = "#007A87") +
+  ggtitle("Boxplot showing Payments of  States with Top 5 Rating") +
+  labs(x = "States with Top 5 Rating", y = "Payment") +
+  scale_x_discrete(label = c("Utah","Hawaii","Wisconsin","Idaho", "South Dakota"))+
+  theme(plot.title = element_text(face = "bold", size=16))
+```
+
+
+This graph shows that among the top rating states, Utah has higher payment than others. Its median is beyond \$22000 which is almost the highest payment in South Dakota and Idaho. South Dakota has the lowest median payment among these 5 states. Although South Dakota has an outlier up to \$25000, its majority has the lowest payment compared to other states. We notice that 3 of the top 5 rating payment median are below \$18000.
+
+
+
+#### Last 5 Rating State Payment
+```{r,warning=FALSE,echo=FALSE, fig.width=9,fig.height=6}
+payment1<-pay[pay$State==lowstate,c("State","Payment")]
+payment1<-payment1[payment1$Payment!="Not Available",]
+payment1$Payment<-substr(payment1$Payment,start=2,stop=10)
+payment1$Payment<-as.numeric(gsub(",","", payment1$Payment))
+payment1$State<-as.character(payment1$State)
+
+ggplot(payment1, aes(x = fct_reorder(State, -Payment, fun=median), 
+                     y = Payment)) + 
+  geom_boxplot(fill = "#FF5A5F", color = "#565A5C") + 
+  geom_jitter(alpha = 0.05, width = 0.1, color = "#007A87") +
+  ggtitle("Boxplot showing Payments of States with Last 5 Rating") +
+  labs(x = "States with Last 5 Rating", y = "Payment") +
+  scale_x_discrete(label = c("District of Columbia","Nevada","New York","Florida", "Mississippi"))+
+  theme(plot.title = element_text(face = "bold", size=16))
+
+
+```
+
+This graph shows that Washington D.C, Florida and Nevada have very high payment amony these states. It may be one reason that their rating will be low since if people pay more, they will expect better service and result. Comparing these two graphs, we find that top 5 rating states have relatively low payment than the last 5 rating states. Payment will be one important component to influence the rating.
+
+
+
+
+
+## Relationship between Rating and Death Rate
+
+
+### Dearth Rate Description
+
+
+Patients admitted to the hospital for treatment of a medical problem sometimes get other serious injuries or complications, and may even die.
+Hospitals can often prevent these events by some best practices for treating patients.
+
+Death rates show how often patients who are hospitalized for certain conditions or procedures die soon after hospitalization.
+
+Death rates provide information about important aspects of hospital care that affect patients' outcomes - like prevention of and response to complications, emphasis on patient safety, and the timeliness of care.
+
+
+```{r CDPtheme,echo=FALSE}
+# Cleveland Dot Plot theme
+library(tidyverse)
+theme_dotplot <- theme_bw(16) +
+    theme(axis.text.y = element_text(size = rel(.75)),
+          axis.ticks.y = element_blank(),
+          axis.title.x = element_text(size = rel(.75)),
+          panel.background = element_rect(fill = "moccasin"),
+          panel.grid.major.x = element_line(size = 0.5),
+          panel.grid.major.y = element_line(size = 0.5, "lightblue"),
+          panel.grid.minor.x = element_blank(),
+          plot.title = element_text(face = "bold", size=16),
+          legend.position = "top")
+```
+
+
+
+```{r, fig.height = 10,echo=FALSE, fig.width=9}
+deathrate <- read.csv("Complications_and_Deaths_-_Hospital.csv")
+deathrate <- deathrate %>% 
+             filter(Score !="Not Available") %>%
+             select(State, Score) 
+deathrate$Score <- as.numeric(as.character(deathrate$Score))
+deathrate <- tapply(deathrate$Score, deathrate$State, mean)
+deathrate <- data.frame(state = names(deathrate), Score = deathrate)
+deathrate<- deathrate[!is.na(deathrate$Score), ]
+deathrate <- deathrate[deathrate$state!="PR" & deathrate$state!="VI" & deathrate$state!="GU" & deathrate$state!="MP", ]
+data(state.regions)
+deathrate$State <- state.regions$region
+deathrate$State <- deathrate$State[order(deathrate$Score, decreasing = TRUE)]
+deathrate$state <- deathrate$state[order(deathrate$Score, decreasing = TRUE)]
+deathrate$Score <- sort(deathrate$Score, decreasing = TRUE)
+deathrate$Panel <- rep(1:5, c(10,10,10,10,11))
+deathrate$Panel <- factor(deathrate$Panel, levels = 1:5, 
+                   labels = c("Score: 11.5-13.5",
+                              "Score: 10.6-11.5",
+                              "Score: 10.3-10.6",
+                              "Score: 9.7-10.3",
+                              "Score: 7.5-9.7"))
+deathrate.plot <- ggplot(data=deathrate, aes(x=Score, y=fct_reorder(State, Score)))+
+                  geom_point(col = "blue")+
+                  facet_wrap(~Panel, scales = "free", ncol = 1)+
+                  xlab("Death Rate Score")+
+                  ylab("")+
+                  ggtitle("Cleveland Dot Plot of Death Rate Score by State")+
+                  theme_dotplot
+
+deathrate.plot
+```
+
+From the plot we know that North Dakota, Maryland, New Jersey, Washington and Nevada are the top 5 death rate state. From above plot we notice that
+DC and Nevada are also in the last 5 rating state. Since they have the relatively high death rate, it may contributes to their low rating. The plot also shows that Utah and South Dakota which have almost the lowest death rate are in the top 5 rating state. So it is convinced that in some sense, high death rate leads to low rating and low death rate leads to high rating. 
+
+
+##Relationship between Rating and Star Distribution
+
+### The Star Distribution of Top 5 Rating State
+
+```{r,echo=FALSE,  fig.width=9,fig.height=6}
+star <- read.csv("star.csv")
+for (i in 2:6){
+  star[,i] <- star[,i]/star$Number.of.hospitals.rated
+} 
+star <- star[,1:6]
+colnames(star) <- c("State","5 star", "4 star", "3 star", "2 star", "1 star")
+topstate <- c("Wisconsin","South Dakota","Utah","Hawaii","Indiana")
+topstar <- star[star$State==topstate[1], ]
+for (i in 2:5){
+  topstar <- rbind(topstar, star[star$State==topstate[i], ])
+}
+topstar <- topstar %>% gather(key=stars, value=percent, -State)
+topstar$State <- factor(topstar$State,levels = c("Wisconsin","South Dakota","Utah","Hawaii","Indiana"))
+topstar$stars <- factor(as.factor(topstar$stars), levels = c("5 star", "4 star", "3 star", "2 star", "1 star"))
+ggplot(data=topstar, aes(x=State, y= percent, fill=stars))+
+  geom_col(position = "dodge", colour="black")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_gradient(low="#d3cbcb", high="#852eaa")+
+  scale_fill_manual("Star Rating", values=c("#e06f69","#357b8a", "#7db5b8", "#59c6f3", "#f6c458"))+
+  ggtitle("Number of Hospitals in each Star Level\n (Top Five States)")+
+  theme(plot.title = element_text(face = "bold", size=16))
+
+```
+
+The plot shows different star percentage in top 5 rating state.
+
+It is obvious that besides South Dakota, the percentage of 5 star hospitals for the other 4 states are low. It means the number of 5 star hospitals may not be a significant factor that contributes to a high rating. One reason may be that 5 star hospitals may need a higher payment which is not affordable for most people. These top 5 rating states have the high percentage of 4 star and 3 star hospitals which are affordable for more people.
+
+
+
+### The Star Distribution of Last 5 Rating State
+
+```{r,echo=FALSE,fig.width=9,fig.height=6}
+lowstate <- c("Mississippi","Florida", "Nevada", "New York","District of Columbia")
+lowstar <- star[star$State==lowstate[1], ]
+for (i in 2:5){
+  lowstar <- rbind(lowstar, star[star$State==lowstate[i], ])
+}
+lowstar <- lowstar %>% gather(key=stars, value=percent, -State)
+lowstar$State <- factor(lowstar$State,levels = c("Mississippi","Florida", "Nevada", "New York","District of Columbia"))
+lowstar$stars <- factor(as.factor(lowstar$stars), levels = c("5 star", "4 star", "3 star", "2 star", "1 star"))
+ggplot(data=lowstar, aes(x=State, y= percent, fill=stars))+
+  geom_col(position = "dodge", colour="black")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_gradient(low="#d3cbcb", high="#852eaa")+
+  scale_fill_manual("Star Rating", values=c("#e06f69","#357b8a", "#7db5b8", "#59c6f3", "#f6c458"))+
+  ggtitle("Number of Hospitals in each Star Level\n (Last Five States)")+
+  theme(plot.title = element_text(face = "bold", size=16))
+
+```
+
+Compared this plot to the above plot, we can easily notice that the last 5 rating states have much less 5 star and 4 star hospitals than the top 5 rating states. They have much more 1 star and 2 star hospitals than the top 5 rating states, which may contribute to their low rating. This may because the 1 star and 2 star hospitals cannot greatly meet most people's needs.
+
+So the percentage of different star hospital is an important variable related to the rating. 
+
+
+##The Relationship Between Rating and Outpatient Imaging Efficiency
+
+
+###Use of Medical Imaging
+
+The measures on the use of medical imaging show how often a hospital provides specific imaging tests for Medicare beneficiaries under circumstances where the imaging may not be medically appropriate. Lower percentages suggest more efficient use of medical imaging.
+
+The outpatient imaging efficiency measures apply only to medicare beneficiaries enrolled in original medicare who were treated as outpatients in hospital facilities reimbursed through the Outpatient Prospective Payment System (OPPS). These measures do not include Medicare managed care patients, non-Medicare patients, or patients who were admitted to the hospital as inpatients.
+
+###An Interative Graph Showing the Relationship between Rating and Outpatient Imaging Efficiency by Region
+
+Here is an interative graph showing the relationship between rating and outpatient imaging efficiency by region. Each point refers to one state, and each state is given a colour according to its geographical region. When you hover over a point, you can check the hospital rating, outpatient imaging efficiency score, state name and region.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE, fig.width=9,fig.height=6}
+library(plotly)
+care <- read.csv("Image.csv")
+care <- care[care$Score!="Not Available", ]
+care$Score <- as.numeric(as.character(care$Score))
+care.plot <- tapply(care$Score, care$State, mean)
+care.plot <- data.frame(state = names(care.plot), score = care.plot)
+care.plot <- care.plot[!is.na(care.plot$score), ]
+care.plot <- care.plot[care.plot$state!="PR" & care.plot$state!="VI" & care.plot$state!="GU" & care.plot$state!="MP" &  care.plot$state!="AS", ]
+data(state.regions)
+care.plot$statename <- state.regions$region
+care.plot <- cbind(care.plot, rating= rating.map$value)
+index <- order(care.plot$statename)
+care.plot <- care.plot[index, ]
+location <- c(as.character(state.region[1:8]), "Northeast" , as.character(state.region[-c(1:8)]))
+care.plot$Region <- location
+p <- ggplot(data = care.plot, aes(x=score, y=rating))+
+  geom_point(aes(col=Region, text=paste("state:", statename)), size=3, alpha=0.5, position="jitter")+
+  geom_smooth(method='lm')+
+  scale_color_brewer(palette="Set1")+
+  xlab("Hospital Rating")+
+  ylab("Imaging Efficiency Score")+
+  ggtitle("Scatter Plot of Hospital Rating \nAganist Imaging Efficiency")+
+  theme(plot.title = element_text(face = "bold", size=16))
+
+ggplotly(p)
+
+```
+
+
+The plot shows there is no direct connection between rating and the score of outpatient imaging efficiency. The scores of the states in the four regions seem to be equally distributed accross the graph and there seems to be no obvious linear association between score and rating for these states. With a fixed rating, there may be different scores varying from low to high.
+
+
+### An Interative Parallel Coordinates Summary Plot
+
+Here is an interative parallel coordinates plot. We summarize all the data showing above and group the states by the region they belong to. You can use mouse to select the range you want to display for each variable. You can also change the order of the coordinates to show different patterns of these variables. It helps us to have a better understanding of the different medical patterns in different regions.
+
+```{r,echo=FALSE,fig.width=9,fig.height=6}
+library(parcoords)
+location <- c(as.character(state.region[1:8]), "Northeast" , as.character(state.region[-c(1:8)]))
+combine <- data.frame(State = rating.map$region,
+                      Rating = rating.map$value,
+                      Payment = payment.map$value,
+                      Deathrate = deathrate$Score,
+                      ImageEfficiency = care.plot$score
+                      )
+colnames(combine)[5] <- "Image Efficiency"
+index <- order(combine$State)
+combine <- combine[index, ]
+combine$Region <- as.factor(location)
+combine$Region <- factor(combine$Region,
+                          levels = c("Northeast", "North Central",
+                                     "South","West"))
+combine <- combine[, c("State", "Region", "Rating", "Payment", "Deathrate", "Image Efficiency")]
+parcoords(combine,
+          rownames = FALSE,
+          brushMode = "1D-axes",
+          reorderable = TRUE,
+          queue = TRUE,
+          color = list(
+          colorBy = "Region",
+          colorScale = htmlwidgets::JS("d3.scale.category10()")))
+
+```
+
+
+By playing with this plot, we can see many interesting patterns. For exmaple, if we only display the states in the North Central region on the plot, we can clearly see that the states in this region have relatively high hospital ratings compared to other ones, their cost for medical care, death rate score and image effeciency score are all relatively low. The patterns for the other three regions can also be explored in a similar way from this interactive parallel coordinates plot.
+
+
+# VI. Conclusion
+
+### Payment has a Great Impact on Rating
+In some sense, higher payment will stop people from accessing the high quality medical care, thus high payment will lead to low rating. On the contrary, low payment will let medical care more affordable for more people, which results in higher hospital rating. But payment is not the only factor that has a great influence on rating, in some state, payment may be a little bit high while the state still has a high rating. In this case, we may consider other latent variables.
+
+###Death Rate also Contributes to Rating
+Death rate has an intuitive relation to the rating. In hospital, death is an inevitable topic, and it is of common sense that the lower the death rate, the better the performance of the hospital. From our previous analysis, it is obvious that high death rate leads to low rating and low death rate results in high rating, which is consistent with our intuition.
+
+###Hospital Star Distribution Matters
+The hospital star distribution plays an important role for patients to select hospitals. States with some 5 star hospitals and many 4 star hospitals can give patients more choice to get access to high quality hospital. States that consist of many 3 star hospitals or 2 star hospitals could not give as many opportunity for patients to receive high efficiency medical care. A balanced hospital star distribution can improve the state overall rating.
+
+###Outpatient Imaging Efficiency Shows no Obvious Effect
+Outpatient imaging efficiency seems to be evenly distributed. There is no obvious linear association between outpatient imaging efficiency and hospital rating. Maybe we should take into consideration  other variables to further make it more clear whether outpatient imaging efficiency contributes to hospital rating.
+
+
+##Limitations
+
+* We did not have data for past years and hence could not compare current rating with past rating. Hence, more works should be done to clearly find how the change of other latent variables will make rating change.
+
+* These data allows us to compare the quality of care at over 4,000 Medicare-certified hospitals across the country. But there are still some hospitals which were not in the Medicare-certified hospitals list.
+
+* Some hospitals didn't provide enough data. So we have to drop them and it may cause some inacurate effects.
+
+##Future Directions
+
+We want to expand our analysis to certain states or cities and compare patterns among these cities. From the insights we have derived, we can help hospitals further improve their performance and assist patients in choosing a more suitable hospital for them.
+
+
+
+
+
+
+
+
+
+
+
+
+
